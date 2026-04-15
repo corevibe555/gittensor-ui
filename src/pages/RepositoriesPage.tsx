@@ -171,7 +171,7 @@ const RepositoriesPage: React.FC = () => {
           totalScore: s?.totalScore || 0,
           totalPRs: s?.totalPRs || 0,
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
-          weight: repo.weight ? parseFloat(String(repo.weight)) : 0,
+          weight: repo.weight ?? '0',
           inactiveAt: repo.inactiveAt,
         };
       })

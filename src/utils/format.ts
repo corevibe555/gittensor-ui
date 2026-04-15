@@ -63,6 +63,46 @@ export const formatUsdEstimate = (
   return showZero ? `${prefix}$0` : null;
 };
 
+// Precision-safe comparator for decimal strings (e.g. subnet weights stored as
+// big-float strings). Avoids Number() coercion so values beyond float64
+// precision sort correctly. Returns negative/zero/positive per Array.sort.
+export const compareDecimalStrings = (
+  a: string | null | undefined,
+  b: string | null | undefined,
+): number => {
+  const parse = (raw: string | null | undefined) => {
+    const s = (raw ?? '').trim();
+    if (!s) return { neg: false, int: '0', frac: '' };
+    const sign = s[0] === '-';
+    const body = s[0] === '-' || s[0] === '+' ? s.slice(1) : s;
+    const dot = body.indexOf('.');
+    const intRaw = dot === -1 ? body : body.slice(0, dot);
+    const fracRaw = dot === -1 ? '' : body.slice(dot + 1);
+    const int = intRaw.replace(/^0+(?=\d)/, '') || '0';
+    const frac = fracRaw.replace(/0+$/, '');
+    return { neg: sign && !(int === '0' && frac === ''), int, frac };
+  };
+
+  const pa = parse(a);
+  const pb = parse(b);
+
+  if (pa.neg !== pb.neg) return pa.neg ? -1 : 1;
+  const sign = pa.neg ? -1 : 1;
+
+  if (pa.int.length !== pb.int.length) {
+    return (pa.int.length - pb.int.length) * sign;
+  }
+  if (pa.int !== pb.int) {
+    return (pa.int < pb.int ? -1 : 1) * sign;
+  }
+
+  const maxLen = Math.max(pa.frac.length, pb.frac.length);
+  const fa = pa.frac.padEnd(maxLen, '0');
+  const fb = pb.frac.padEnd(maxLen, '0');
+  if (fa === fb) return 0;
+  return (fa < fb ? -1 : 1) * sign;
+};
+
 export const credibilityColor = (cred: number): string => {
   if (cred >= 0.9) return CREDIBILITY_COLORS.excellent;
   if (cred >= 0.7) return CREDIBILITY_COLORS.good;

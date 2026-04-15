@@ -37,7 +37,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { useSearchParams } from 'react-router-dom';
-import { truncateText } from '../../utils';
+import { compareDecimalStrings, truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
 import theme, { scrollbarSx } from '../../theme';
 
@@ -46,7 +46,7 @@ interface RepoStats {
   totalScore: number;
   totalPRs: number;
   uniqueMiners: Set<string>;
-  weight: number;
+  weight: string;
   rank?: number;
   inactiveAt?: string | null;
 }
@@ -145,7 +145,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           comparison = a.repository.localeCompare(b.repository);
           break;
         case 'weight':
-          comparison = a.weight - b.weight;
+          comparison = compareDecimalStrings(a.weight, b.weight);
           break;
         case 'totalScore':
           comparison = a.totalScore - b.totalScore;
@@ -209,7 +209,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       value: Number(item?.totalScore) || 0,
       rank: item?.rank || index + 1,
       repository: item?.repository || '',
-      weight: item?.weight || 0,
+      weight: parseFloat(item?.weight || '0') || 0,
       prs: item?.totalPRs || 0,
       contributors: item?.uniqueMiners?.size || 0,
       itemStyle: {
@@ -785,7 +785,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           color: '#ffffff',
                         }}
                       >
-                        {repo.weight.toFixed(2)}
+                        {(parseFloat(repo.weight) || 0).toFixed(2)}
                       </Typography>
                     </TableCell>
                     <TableCell
